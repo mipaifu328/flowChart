@@ -4,25 +4,45 @@
  * @Author: mipaifu328
  * @Date: 2022-06-14 15:32:04
  * @LastEditors: mipaifu328
- * @LastEditTime: 2022-06-16 15:48:36
+ * @LastEditTime: 2022-06-17 11:37:03
 -->
 <script setup lang="ts">
 import FromDetail from './FromDettail.vue'
-import { onMounted, ref, watch } from 'vue'
-import { Graph, Node, Edge } from '@antv/x6'
+import { onMounted, ref, watch, reactive } from 'vue'
+import { Graph, Node, Edge, View } from '@antv/x6'
 import createGraph from './graph'
 import { Base } from '@antv/x6/lib/shape/base'
+import RightMenu from './RightMenu.vue'
+import { $ref } from 'vue/macros'
+
+let count = $ref(0)
 
 interface DetailData {
   title: string
   key: string
   value: string
 }
+interface Position {
+  x: number
+  y: number
+}
+
+interface GraphEventObject {
+  e: MouseEvent
+  x: number
+  y: number
+  node?: Node
+  edge?: Edge
+  view: View
+}
+
 let graph: Graph
 const detailData = ref<DetailData[]>([])
 let currentNode: Edge | Node // 当前节点
-let lineColor = ref<string>('#dd0022')
-
+let currentDelete: Edge | Node | undefined
+let lineColor: string = $ref('#dd0022')
+let isRightMenuVisble: boolean = $ref(false)
+let rightMenuPosition: Position = $ref({ x: 0, y: 0 })
 const { jsonData } = defineProps(['jsonData'])
 const emit = defineEmits(['saveJsonData'])
 
@@ -61,16 +81,14 @@ const initFlowChart = () => {
   })
 
   graph.on('edge:added', ({ edge, index, options }) => {
-    edge.setAttrs({ line: { stroke: lineColor.value } })
-    console.log(lineColor.value)
+    edge.setAttrs({ line: { stroke: lineColor } })
+    console.log(lineColor)
   })
 
-  graph.on('edge:contextmenu', ({ edge }) => {
-    edge.remove()
-  })
-
-  graph.on('node:contextmenu', ({ node }) => {
-    node.remove()
+  graph.on('cell:contextmenu', (e: GraphEventObject) => {
+    isRightMenuVisble = true
+    rightMenuPosition = { x: e.x, y: e.y }
+    currentDelete = e.node || e.edge
   })
 }
 
@@ -105,6 +123,15 @@ const saveGraph = () => {
   emit('saveJsonData', JSON.stringify(json))
 }
 
+const deleteNode = () => {
+  isRightMenuVisble = false
+  currentDelete!.remove()
+}
+
+const clearGraph = () => {
+  graph.clearCells()
+}
+
 onMounted(() => {
   initFlowChart()
   graph.fromJSON(JSON.parse(jsonData))
@@ -116,11 +143,18 @@ onMounted(() => {
     线颜色： <el-color-picker v-model="lineColor" />
     <el-divider direction="vertical" />
     <el-button type="primary" size="small" @click="saveGraph"> 保存 </el-button>
+    <el-divider direction="vertical" />
+    <el-button type="danger" size="small" @click="clearGraph"> 清空 </el-button>
   </div>
   <div id="container">
     <div id="stencil"></div>
     <div id="graph-container"></div>
     <FromDetail class="form-detail" :detailData="detailData" />
+    <RightMenu
+      :visible="isRightMenuVisble"
+      :position="rightMenuPosition"
+      @deleteNode="deleteNode"
+    />
   </div>
 </template>
 
@@ -133,6 +167,7 @@ onMounted(() => {
   height: 500px;
   display: flex;
   border: 1px solid #dfe3e8;
+  position: relative;
 }
 #stencil {
   width: 180px;

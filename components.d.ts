@@ -13,6 +13,7 @@ declare module '@vue/runtime-core' {
     ElInput: typeof import('element-plus/es')['ElInput']
     FlowChart: typeof import('./src/components/FlowChart/FlowChart.vue')['default']
     FromDettail: typeof import('./src/components/FlowChart/FromDettail.vue')['default']
+    RightMenu: typeof import('./src/components/FlowChart/RightMenu.vue')['default']
   }
 }
 
