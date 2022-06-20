@@ -4,7 +4,7 @@
  * @Author: mipaifu328
  * @Date: 2022-06-14 15:32:04
  * @LastEditors: mipaifu328
- * @LastEditTime: 2022-06-17 11:37:03
+ * @LastEditTime: 2022-06-20 15:29:35
 -->
 <script setup lang="ts">
 import FromDetail from './FromDettail.vue'
@@ -14,8 +14,7 @@ import createGraph from './graph'
 import { Base } from '@antv/x6/lib/shape/base'
 import RightMenu from './RightMenu.vue'
 import { $ref } from 'vue/macros'
-
-let count = $ref(0)
+import { orderPlay, getOrderCells, PlayCell } from './orderPlay'
 
 interface DetailData {
   title: string
@@ -79,10 +78,9 @@ const initFlowChart = () => {
       ...data,
     ]
   })
-
   graph.on('edge:added', ({ edge, index, options }) => {
+    if ((edge as PlayCell).isReplay) return
     edge.setAttrs({ line: { stroke: lineColor } })
-    console.log(lineColor)
   })
 
   graph.on('cell:contextmenu', (e: GraphEventObject) => {
@@ -131,6 +129,23 @@ const deleteNode = () => {
 const clearGraph = () => {
   graph.clearCells()
 }
+const play = () => {
+  orderPlay(graph)
+}
+
+const getSource = () => {
+  let orderCells = getOrderCells(graph)
+  for (const cell of orderCells) {
+    if (cell.isNode()) {
+      console.log('节点： ' + (cell as Base).getLabel())
+    } else {
+      let labels = (cell as Edge).getLabels()[0]
+      if (labels) {
+        console.log('线： ' + labels?.attrs?.label.text)
+      }
+    }
+  }
+}
 
 onMounted(() => {
   initFlowChart()
@@ -145,6 +160,8 @@ onMounted(() => {
     <el-button type="primary" size="small" @click="saveGraph"> 保存 </el-button>
     <el-divider direction="vertical" />
     <el-button type="danger" size="small" @click="clearGraph"> 清空 </el-button>
+    <el-button type="success" size="small" @click="play"> 播放 </el-button>
+    <el-button type="success" size="small" @click="getSource"> 播放 </el-button>
   </div>
   <div id="container">
     <div id="stencil"></div>
