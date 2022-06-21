@@ -4,7 +4,7 @@
  * @Author: mipaifu328
  * @Date: 2022-06-14 15:32:04
  * @LastEditors: mipaifu328
- * @LastEditTime: 2022-06-20 15:29:35
+ * @LastEditTime: 2022-06-21 16:17:04
 -->
 <script setup lang="ts">
 import FromDetail from './FromDettail.vue'
@@ -14,7 +14,13 @@ import createGraph from './graph'
 import { Base } from '@antv/x6/lib/shape/base'
 import RightMenu from './RightMenu.vue'
 import { $ref } from 'vue/macros'
-import { orderPlay, getOrderCells, PlayCell } from './orderPlay'
+import {
+  orderPlay,
+  getOrderCells,
+  getTreeCells,
+  PlayCell,
+  TreeCell,
+} from './orderPlay'
 
 interface DetailData {
   title: string
@@ -133,7 +139,7 @@ const play = () => {
   orderPlay(graph)
 }
 
-const getSource = () => {
+const getOrderSource = () => {
   let orderCells = getOrderCells(graph)
   for (const cell of orderCells) {
     if (cell.isNode()) {
@@ -145,6 +151,27 @@ const getSource = () => {
       }
     }
   }
+}
+
+const formatterTreeCells = (cells: TreeCell[], level: number) => {
+  for (const cell of cells) {
+    const strNode =
+      (cell.node && (cell.node! as unknown as Base).getLabel()) || ''
+    const strEdge =
+      (cell.edge && (cell.edge as Edge).getLabels()[0]?.attrs?.label.text) || ''
+    const tab = '  '.repeat(level * 2)
+    if (strNode || strEdge) {
+      console.log(`${tab}${strEdge}${strNode}`)
+    }
+    if (cell.branch.length > 0) {
+      formatterTreeCells(cell.branch, level + 1)
+    }
+  }
+}
+const getTreeSource = () => {
+  const cells = getTreeCells(graph)
+  console.log(cells)
+  formatterTreeCells(cells, 0)
 }
 
 onMounted(() => {
@@ -161,7 +188,12 @@ onMounted(() => {
     <el-divider direction="vertical" />
     <el-button type="danger" size="small" @click="clearGraph"> 清空 </el-button>
     <el-button type="success" size="small" @click="play"> 播放 </el-button>
-    <el-button type="success" size="small" @click="getSource"> 播放 </el-button>
+    <el-button type="primary" size="small" @click="getOrderSource">
+      获取顺序播放数据
+    </el-button>
+    <el-button type="primary" size="small" @click="getTreeSource">
+      获取树结构格式数据
+    </el-button>
   </div>
   <div id="container">
     <div id="stencil"></div>

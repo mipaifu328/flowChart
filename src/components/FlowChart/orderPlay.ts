@@ -1,30 +1,55 @@
-import { Cell, CellView, Graph } from '@antv/x6'
+import { Cell, Edge, Graph } from '@antv/x6'
 /*
  * @Descripttion:
  * @version: 1.0
  * @Author: mipaifu328
  * @Date: 2022-06-17 16:58:57
  * @LastEditors: mipaifu328
- * @LastEditTime: 2022-06-20 14:53:51
+ * @LastEditTime: 2022-06-21 17:24:17
  */
 let graph: Graph
-let edgeCells: Cell[] = []
-let nodeCells: Cell[] = []
-let saveCells: any[] = []
-let sourceNodes = new Set()
-let targetNodes = new Set()
+let edgeCells: Cell[] = [] // 边列表
+let nodeCells: Cell[] = [] // 节点列表
+let saveCells: any[] = [] // 保存画布数据
+let sourceNodes = new Set() // 来源节点id集合
+let targetNodes = new Set() // 目标节点id集合
+
+let orderCells: Cell[] = [] // 顺序执行的节点
+let playCells: PlayCell[] = [] // 播放节点
+
+let treeCells: TreeCell[] = []
 
 export interface PlayCell extends Cell {
   isReplay?: boolean
 }
 
-let orderCells: Cell[] = []
-let playCells: PlayCell[] = []
+interface NodeInputOutput extends Cell {
+  branchEdges: Edge[]
+}
+
+export interface TreeCell {
+  edge: Edge | null
+  node: NodeInputOutput | null
+  branch: TreeCell[]
+}
+
+const initData = () => {
+  edgeCells = [] // 边列表
+  nodeCells = [] // 节点列表
+  saveCells = [] // 保存画布数据
+  sourceNodes = new Set() // 来源节点id集合
+  targetNodes = new Set() // 目标节点id集合
+
+  orderCells = [] // 顺序执行的节点
+  playCells = [] // 播放节点
+
+  treeCells = []
+}
 
 // 初始化数据
 const initGraphData = (g: Graph) => {
   // 保存画布和节点列表
-
+  initData()
   graph = g
   const cells = graph.getCells()
   saveCells = graph.toJSON().cells
@@ -38,8 +63,8 @@ const initGraphData = (g: Graph) => {
   }
 
   for (let cell of cells) {
-    cell.isEdge() && edgeCells.push(cell)
     cell.isNode() && nodeCells.push(cell)
+    cell.isEdge() && edgeCells.push(cell)
   }
 
   console.log(cells, saveCells)
@@ -58,6 +83,15 @@ const findStart = () => {
     }
   })!
   return startNode
+}
+
+const findLast = () => {
+  let lastNode: Cell = nodeCells.find((cell: Cell) => {
+    if (!sourceNodes.has(cell.id)) {
+      return cell
+    }
+  })!
+  return lastNode
 }
 
 const generateOrderCells = (root: Cell) => {
@@ -86,10 +120,8 @@ const generateOrderCells = (root: Cell) => {
     }
   }
 }
-
+// 获取顺序执行的节点
 const getOrderCells = (g: Graph) => {
-  orderCells = []
-  playCells = []
   initGraphData(g)
   orderCells.push(findStart())
   playCells.push(findStart())
@@ -107,4 +139,77 @@ const orderPlay = async (g: Graph) => {
   }
 }
 
-export { orderPlay, getOrderCells }
+// 节点添加输入输出线
+const initInputOutput = () => {
+  for (let cell of nodeCells) {
+    let node = cell as NodeInputOutput
+    node.branchEdges = []
+    for (let edge of edgeCells) {
+      if (edge.isEdge()) {
+        if ((edge.getSource() as any).cell === node.id) {
+          node.branchEdges.push(edge)
+        }
+      }
+    }
+  }
+  console.log(nodeCells)
+}
+const isFinishNode = (node: NodeInputOutput) => {
+  const finishNode = nodeCells.find((cell: Cell) => {
+    if (!sourceNodes.has(cell.id)) {
+      return cell
+    }
+  })!
+  return finishNode.id === node.id
+}
+
+const getNextCell = (edge: Edge) => {
+  const nextCell = nodeCells.find((cell: Cell) => {
+    if (cell.id === (edge.getTarget() as any).cell) {
+      return cell
+    }
+  })!
+  return nextCell
+}
+
+const generateTreeCells = (
+  currentNode: NodeInputOutput,
+  edge: Edge | null,
+  branch: TreeCell[]
+) => {
+  let template = {
+    edge: edge,
+    node: isFinishNode(currentNode) ? null : currentNode,
+    branch: [],
+  }
+  branch.push(template)
+  const saveEdges = currentNode.branchEdges
+  if (!saveEdges || saveEdges.length === 0) return
+  if (saveEdges.length > 1) {
+    for (let saveEdge of saveEdges) {
+      const nextCell = getNextCell(saveEdge) as NodeInputOutput
+      generateTreeCells(nextCell, saveEdge, template.branch)
+    }
+  } else {
+    const nextCell = getNextCell(saveEdges[0]) as NodeInputOutput
+    generateTreeCells(nextCell, saveEdges[0], branch)
+  }
+}
+
+// 获取树结构的节点
+const getTreeCells = (g: Graph) => {
+  initGraphData(g)
+  initInputOutput()
+  let firstNode = findStart() as NodeInputOutput
+  generateTreeCells(firstNode, null, treeCells)
+  // 最后添加结束节点
+  let lastNode = findLast() as NodeInputOutput
+  treeCells.push({
+    edge: null,
+    node: lastNode,
+    branch: [],
+  })
+  return treeCells
+}
+
+export { orderPlay, getOrderCells, getTreeCells }
