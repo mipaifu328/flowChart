@@ -4,7 +4,7 @@
  * @Author: mipaifu328
  * @Date: 2022-06-14 15:32:04
  * @LastEditors: mipaifu328
- * @LastEditTime: 2022-06-17 10:20:53
+ * @LastEditTime: 2022-06-22 17:12:16
  */
 import { defineConfig } from 'vite'
 import vue from '@vitejs/plugin-vue'
@@ -25,4 +25,7 @@ export default defineConfig({
       resolvers: [ElementPlusResolver()],
     }),
   ],
+  build: {
+    outDir: 'live',
+  },
 })
