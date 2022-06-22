@@ -5,7 +5,7 @@ pnpm i
 pnpm run dev
 ```
 # 在线演示
-https://www.mipaifu328.com/flowchart/live/
+https://www.mipaifu328.com/flowChart/live/
 
 效果如下：
 
