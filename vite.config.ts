@@ -4,7 +4,7 @@
  * @Author: mipaifu328
  * @Date: 2022-06-14 15:32:04
  * @LastEditors: mipaifu328
- * @LastEditTime: 2022-06-22 17:45:35
+ * @LastEditTime: 2022-06-22 17:48:43
  */
 import { defineConfig } from 'vite'
 import vue from '@vitejs/plugin-vue'
@@ -14,6 +14,7 @@ import { ElementPlusResolver } from 'unplugin-vue-components/resolvers'
 
 // https://vitejs.dev/config/
 export default defineConfig({
+  base: 'flowChart/live/',
   plugins: [
     vue({
       reactivityTransform: true,
@@ -27,6 +28,5 @@ export default defineConfig({
   ],
   build: {
     outDir: 'live',
-    assetsDir: 'flowChart/live/',
   },
 })
