@@ -5,7 +5,7 @@ import { Cell, Edge, Graph } from '@antv/x6'
  * @Author: mipaifu328
  * @Date: 2022-06-17 16:58:57
  * @LastEditors: mipaifu328
- * @LastEditTime: 2022-06-21 17:24:17
+ * @LastEditTime: 2022-06-22 10:08:42
  */
 let graph: Graph
 let edgeCells: Cell[] = [] // 边列表
@@ -31,6 +31,7 @@ export interface TreeCell {
   edge: Edge | null
   node: NodeInputOutput | null
   branch: TreeCell[]
+  level: number
 }
 
 const initData = () => {
@@ -66,8 +67,6 @@ const initGraphData = (g: Graph) => {
     cell.isNode() && nodeCells.push(cell)
     cell.isEdge() && edgeCells.push(cell)
   }
-
-  console.log(cells, saveCells)
 }
 
 const sleep = (ms: number = 1000) => {
@@ -152,7 +151,6 @@ const initInputOutput = () => {
       }
     }
   }
-  console.log(nodeCells)
 }
 const isFinishNode = (node: NodeInputOutput) => {
   const finishNode = nodeCells.find((cell: Cell) => {
@@ -175,24 +173,35 @@ const getNextCell = (edge: Edge) => {
 const generateTreeCells = (
   currentNode: NodeInputOutput,
   edge: Edge | null,
-  branch: TreeCell[]
+  branch: TreeCell[],
+  level: number
 ) => {
   let template = {
     edge: edge,
     node: isFinishNode(currentNode) ? null : currentNode,
     branch: [],
+    level,
   }
   branch.push(template)
-  const saveEdges = currentNode.branchEdges
-  if (!saveEdges || saveEdges.length === 0) return
-  if (saveEdges.length > 1) {
-    for (let saveEdge of saveEdges) {
-      const nextCell = getNextCell(saveEdge) as NodeInputOutput
-      generateTreeCells(nextCell, saveEdge, template.branch)
+  const branchEdges = currentNode.branchEdges
+  if (!branchEdges || branchEdges.length === 0) return
+  if (branchEdges.length > 1) {
+    for (let branchEdge of branchEdges) {
+      const nextCell = getNextCell(branchEdge) as NodeInputOutput
+      generateTreeCells(
+        nextCell,
+        branchEdge,
+        template.branch,
+        template.level + 1
+      )
     }
   } else {
-    const nextCell = getNextCell(saveEdges[0]) as NodeInputOutput
-    generateTreeCells(nextCell, saveEdges[0], branch)
+    const nextCell = getNextCell(branchEdges[0]) as NodeInputOutput
+    if (level === 0) {
+      generateTreeCells(nextCell, branchEdges[0], branch, level)
+    } else {
+      generateTreeCells(nextCell, branchEdges[0], template.branch, level + 1)
+    }
   }
 }
 
@@ -201,13 +210,14 @@ const getTreeCells = (g: Graph) => {
   initGraphData(g)
   initInputOutput()
   let firstNode = findStart() as NodeInputOutput
-  generateTreeCells(firstNode, null, treeCells)
+  generateTreeCells(firstNode, null, treeCells, 0)
   // 最后添加结束节点
   let lastNode = findLast() as NodeInputOutput
   treeCells.push({
     edge: null,
     node: lastNode,
     branch: [],
+    level: 0,
   })
   return treeCells
 }

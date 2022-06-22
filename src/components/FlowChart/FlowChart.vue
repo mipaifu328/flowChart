@@ -4,7 +4,7 @@
  * @Author: mipaifu328
  * @Date: 2022-06-14 15:32:04
  * @LastEditors: mipaifu328
- * @LastEditTime: 2022-06-21 16:17:04
+ * @LastEditTime: 2022-06-22 09:34:06
 -->
 <script setup lang="ts">
 import FromDetail from './FromDettail.vue'
@@ -153,25 +153,27 @@ const getOrderSource = () => {
   }
 }
 
-const formatterTreeCells = (cells: TreeCell[], level: number) => {
+const formatterTreeCells = (cells: TreeCell[]) => {
   for (const cell of cells) {
     const strNode =
       (cell.node && (cell.node! as unknown as Base).getLabel()) || ''
     const strEdge =
       (cell.edge && (cell.edge as Edge).getLabels()[0]?.attrs?.label.text) || ''
-    const tab = '  '.repeat(level * 2)
-    if (strNode || strEdge) {
-      console.log(`${tab}${strEdge}${strNode}`)
-    }
+    const tab = '  '.repeat(cell.level * 2)
+    // if (strNode || strEdge) {
+    console.log(
+      `${tab}${strEdge ? strEdge + ':' : ''}${strNode ? strNode : '(结束)'}`
+    )
+    // }
     if (cell.branch.length > 0) {
-      formatterTreeCells(cell.branch, level + 1)
+      formatterTreeCells(cell.branch)
     }
   }
 }
 const getTreeSource = () => {
   const cells = getTreeCells(graph)
   console.log(cells)
-  formatterTreeCells(cells, 0)
+  formatterTreeCells(cells)
 }
 
 onMounted(() => {
