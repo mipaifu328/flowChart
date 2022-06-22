@@ -10,3 +10,5 @@ pnpm run dev
 ![运行效果图](./public/demo.png)
 
 ![添加删除功能](./public/demo2.png)
+
+![播放功能](./public//demo3.gif)
