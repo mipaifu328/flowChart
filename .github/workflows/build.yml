@@ -1,0 +1,40 @@
+# This is a basic workflow to help you get started with Actions
+
+name: Build and Deploy
+
+# Controls when the workflow will run
+on:
+  # Triggers the workflow on push or pull request events but only for the "master" branch
+  push:
+    branches: [ "master" ]
+
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+
+# A workflow run is made up of one or more jobs that can run sequentially or in parallel
+jobs:
+  # This workflow contains a single job called "build"
+  MyAutoDeply:
+    # 构建环境使用 ubuntu
+    runs-on: ubuntu-latest
+
+    # Steps represent a sequence of tasks that will be executed as part of the job
+    steps:
+      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
+      - uses: actions/checkout@v3
+        with:
+          persist-credentials: false
+
+      # 下载依赖 打包项目
+      - name: Run install and build
+        run: |
+          npm install
+          npm run build
+      # 将打包内容发布到 github page
+      - name: Deploy
+        # 使用别人写好的 actions
+        uses: JamesIves/github-pages-deploy-action@v4.3.3
+        with:  # 自定义环境变量
+          token: ${{ secrets.FLOWCHART_TOKEN }}
+          branch: gh-pages
+          folder: live
